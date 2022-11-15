@@ -1,34 +1,378 @@
 <!DOCTYPE html>
 <html>
 <head>
+<title>The Big Blue Ship</title>
 <style>
-  .table {display: table;}
-  .cell {display: table-cell;}
+    #hideInstructions {display:none}
+    #instructions {display:none}
+    #navi {accent-color:blue}
+    .hidden {display:none}
+    #removeButton {display:none}
+    #clippy {display:none}
+    #output {
+        display:none;
+        background-color:rgb(125, 222, 143);
+    }
 </style>
+<script>
+    const cellIndex = ['s1n','s1e','s1s','s1a','s2n','s2e','s2s','s2a','s3n','s3e','s3s','s3a','s4n','s4e','s4s','s4a','s5n','s5e','s5s','s5a','s6n','s6e','s6s','s6a','s7n','s7e','s7s','s7a','s8n','s8e','s8s','s8a','s9n','s9e','s9s','s9a','s10n','s10e','s10s','s10a','s11n','s11e','s11s','s11a','s12n','s12e','s12s','s12a','s13n','s13e','s13s','s13a','s14n','s14e','s14s','s14a','s15n','s15e','s15s','s15a','s16n','s16e','s16s','s16a','s17n','s17e','s17s','s17a','s18n','s18e','s18s','s18a']
+    var piece = {b1A:'null', b1B:'null', b1C:'null', b2A:'null', b2B:'null', b2C:'null', b3A:'null', b3B:'null', b3C:'null', g1A:'null', g1B:'null', g1C:'null', g2A:'null', g2B:'null', g2C:'null', g3A:'null', g3B:'null', g3C:'null', r1A:'null', r1B:'null', r1C:'null', r2A:'null', r2B:'null', r2C:'null', r3A:'null', r3B:'null', r3C:'null', y1A:'null', y1B:'null', y1C:'null', y2A:'null', y2B:'null', y2C:'null', y3A:'null', y3B:'null', y3C:'null'};
+    var recurses = 0;
+    var color = 'w';
+    var size = 0;
+    var serial = 'Q';
+    var activeOwner = 'nobody';
+    var activePiece = 'nopiece';
+    var activeSystem = '42';
+    var systemArray = 'undiscovered'
+    var systemArrayIndex = 99;
+    var readHead = 88;
+    var fullMap = 'endlessvoidofspace';
+    var mapText = 'nothin yet';
+    var longerform = ''
+    var systemCount = 0
+    var n = 0
+
+    function init() {
+        piece = {b1A:'null', b1B:'null', b1C:'null', b2A:'null', b2B:'null', b2C:'null', b3A:'null', b3B:'null', b3C:'null', g1A:'null', g1B:'null', g1C:'null', g2A:'null', g2B:'null', g2C:'null', g3A:'null', g3B:'null', g3C:'null', r1A:'null', r1B:'null', r1C:'null', r2A:'null', r2B:'null', r2C:'null', r3A:'null', r3B:'null', r3C:'null', y1A:'null', y1B:'null', y1C:'null', y2A:'null', y2B:'null', y2C:'null', y3A:'null', y3B:'null', y3C:'null'};
+        recurses = 0;
+        color = 'w';
+        size = 0;
+        serial = 'Q';
+        activeOwner = 'nobody';
+        activePiece = 'nopiece';
+        activeSystem = '42';
+        systemArray = 'undiscovered'
+        systemArrayIndex = 99;
+        readHead = 88;
+        longerform = ''
+        systemCount = 0
+        n = 0
+        fullMap = 'endlessvoidofspace';
+        mapText = 'nothin yet';
+        return;
+    }
+
+    function processFreeform() {
+        // Refreshes variables, loads longform map data, removes spaces, and converts to array of individual systems
+        init();
+        fullMap = document.getElementById('longform').value.split(' ').join('').split(/\r?\n/);
+        blueShip();
+    }
+
+    function processCells() {
+        // Compiles table entries to longform map data, copies it into longtext field for easier troubleshooting, then calls the standard longform parser
+        for (let i = 0; i < 71; i = i + 4) {
+            if (document.getElementById(cellIndex[i]).value != '') {
+                systemCount = systemCount + 1;
+            }
+        }
+        for (let i = 0; i < 71 && systemCount > 0; i = i + 4) {
+            if (document.getElementById(cellIndex[i]).value != '') {
+                for (n = i; n < i + 3; n++) {
+                    longerform += document.getElementById(cellIndex[n]).value + ',';
+                }
+                longerform += document.getElementById(cellIndex[n]).value;
+                if (systemCount > 1) {
+                    longerform += '\n';
+                }
+                systemCount--;
+            }
+        }
+        document.getElementById('longform').innerHTML = longerform
+        processFreeform();
+    }
+
+    function blueShip() {
+        // Master function for the actual translation work
+        for (activeSystem = 1; activeSystem <= fullMap.length; activeSystem++) {
+            systemArray = fullMap[activeSystem - 1].split(',');
+            // Verifies data integrity if requested
+            if (document.getElementById('navi').checked === true) {
+                dataCommanderData();
+            } else {
+            }
+            for (systemArrayIndex = 1; systemArrayIndex < 4; systemArrayIndex++) {
+                for (readHead = 0; readHead < systemArray[systemArrayIndex].length; readHead = readHead + 2) {
+                    generateData();
+                    assignData();
+                }
+            }
+        }
+        writeData();
+    }
+
+    function dataCommanderData() {
+        //Thoroughly verifies data integrity
+        if (systemArray.length != 4) {
+            alert('Error: Improper data format for system ' + activeSystem + ' "' + systemArray[0] + '". Make sure your data is formatted as "system name, enemy ships, star(s), ally ships" with exact comma structure. If this is already correct, check for double spaces.');
+            throw new Error('Error: Improper data format for system ' + activeSystem + ' "' + systemArray[0] + '". Make sure your data is formatted as "system name, enemy ships, star(s), ally ships" with exact comma structure. If this is already correct, check for double spaces.');
+        } else if (systemArray[2] === '') {
+            alert('Error: System ' + activeSystem + ' "' + systemArray[0] + '" has no star!');
+            throw new Error('Error: System ' + activeSystem + ' "' + systemArray[0] + '" has no star!');
+        } else if (systemArray[1] === '' && systemArray[3] === '') {
+            alert('Error: System ' + activeSystem + ' "' + systemArray[0] + '" has no ships!');
+            throw new Error('Error: System ' + activeSystem + ' "' + systemArray[0] + '" has no ships!');
+        } else if (fullMap.length > 18) {
+            alert('Error: Too many systems!')
+            throw new Error ('Error: Too many systems!')
+        }
+        //Needs typo checker, star field string length character, &c.
+    }
+
+    function generateData() {
+        if (systemArrayIndex == 2) {
+            activeOwner = 'null';
+        } else if (systemArrayIndex == 3) {
+            activeOwner = '"south"';
+        } else {
+            activeOwner = '"north"';
+        }
+        color = systemArray[systemArrayIndex][readHead];
+        size = systemArray[systemArrayIndex][readHead + 1];
+        serial = 'A';
+        return;
+    }
+
+    function assignData() {
+        activePiece = color + size + serial;
+        if (recurses > 2 && document.getElementById('navi').checked === true) {
+            alert('Error: More than three identical ships!');
+            throw new Error("Error: More than three identical ships!");
+        } else if (piece[activePiece] === 'null') {
+            recurses = 0
+            piece[activePiece] = '{"at": ' + activeSystem + ', "owner": ' + activeOwner + '}';
+            return;
+        } else if (serial == 'A') {
+            serial = 'B';
+            recurses = recurses + 1
+            return assignData();
+        } else if (serial == 'B') {
+            serial = 'C';
+            recurses = recurses + 1
+            return assignData();
+        } else {
+            serial = 'A';
+            recurses = recurses + 1
+            return assignData();
+        }
+    }
+
+    function writeData() {
+        document.getElementById('output').innerHTML = '{\n&#9;"map": {';
+        var p = 0;
+        while (p < 36) {
+            for (let i = 0; i < 9; i++) {
+                document.getElementById('output').innerHTML += '\n&#9;"' + Object.keys(piece)[p] + '": ' + piece[Object.keys(piece)[p]];
+                if (Object.keys(piece)[p] != 'y3C') {
+                    document.getElementById('output').innerHTML += ',';
+                }
+                p = p + 1;
+            }
+            document.getElementById('output').innerHTML += '\n';
+        }
+        document.getElementById('output').innerHTML += '&#9;},\n&#9;"homeworldData": {"south":1,"north":2},\n&#9;"turn": "south",\n&#9;"actions": {"sacrifice":null,"number":1},\n&#9;"phase": "playing"\n}'
+        document.getElementById('output').style.display = 'block';
+        document.getElementById('clippy').style.display = 'block';
+        return;
+    }
+
+    function hideInstructions() {
+        document.getElementById('instructions').style.display = 'none';
+        document.getElementById('showInstructions').style.display = 'block';
+        document.getElementById('hideInstructions').style.display = 'none';
+    }
+
+    function showInstructions() {
+        document.getElementById('instructions').style.display = 'block';
+        document.getElementById('showInstructions').style.display = 'none';
+        document.getElementById('hideInstructions').style.display = 'block';
+    }
+
+    function addRows() {
+        document.getElementById('addButton').style.display = 'none';
+        document.getElementById('removeButton').style.display = 'inline';
+        const rows = document.getElementsByClassName('hidden');
+        for (i = 0; i < rows.length; i++) {
+            rows[i].style.display = 'table-row';
+        }
+    }
+
+    function removeRows() {
+        document.getElementById('addButton').style.display = 'inline';
+        document.getElementById('removeButton').style.display = 'none';
+        const rows = document.getElementsByClassName('hidden');
+        for (i = 0; i < rows.length; i++) {
+            rows[i].style.display = 'none';
+        }
+    }
+
+    function clearTable() {
+        const fields = document.querySelectorAll('input[type="text"]');
+        for (i = 0; i < fields.length; i++) {
+            fields[i].value = '';
+        }
+    }
+
+    function clip() {
+        mapText = document.getElementById('output').value;
+        navigator.clipboard.writeText(mapText).then(() => {
+            document.getElementById('clippy').innerText = 'Copied!'
+            setTimeout(() => {
+                document.getElementById('clippy').innerText = 'Copy to Clipboard'
+            }, 5000)
+        });
+        return;
+    }
+</script>
 </head>
 <body>
 
-<h1>Homeworlds Live Map Generator</h1>
-<p>Instructions go here.</p>
-  
-<form>
-  <textarea id="freeform" rows="800" columns="90"></textarea>
-</form>
-  
+<h1>HWL Importable Map Converter</h1>
+<button onclick='showInstructions()' id='showInstructions'>Show Instructions</button>
+<button onclick='hideInstructions()' id='hideInstructions'>Hide Instructions</button>
+<div id="instructions">
+<p>The Big Blue Ship is a tool to convert Homeworlds gamestates from intuitive plaintext to specialized markup which can be imported into the <a href='https://homeworlds-live2.glitch.me/sandbox'>Homeworlds Live Sandbox</a>. Being able to conveniently play both sides of an ongoing game makes position analysis much easier if you aren't so good at visualizing the gamestate after several hypothetical moves!</p>
+<p>The tool is simple to use, but the syntax requirements are moderately precise:</p>
+<p>In the freeform text entry field below: type each system as follows, one system per line with no blank lines, without quotations: "<em>system name</em>, <em>enemy ships</em>, <em>star(s)</em>, <em>ally ships</em>". Single spaces may be added wherever you wish, but double spaces will fail to parse. For example, a typical starting homeworld might look like "delendasunt, , b1r2, g3". Ordering the fields this way makes it easy to transcribe a system simply by reading it from left to right.</p>
+<p>Alternatively, you can input data points singly using the table further down the page. The syntax remains the same, but omit the commas: they will be added automatically. Liberal use of the tab key, and greater ease of error correction, can make this method somewhat faster than freeform typing.</p>
+<p>The tool <em>should</em> work repeatedly, but if it begins to behave strangely, try reloading the page: the odd variable has been known to get stuck every now and then. If you encounter any persistent bugs, desire more thorough documentation, or feel like cleaning up some spaghetti code, check out this project's <a href='https://https://github.com/delendasunt/blueship'>GitHub repository</a>, or message @forkofnature on the <a href='https://discord.gg/tqYPfWVkSk'>Homeworlds Discord server</a>.</p>
+<p>Enjoy!</p>
+</div>
+
+<div id='inputArea'>
+<textarea id='longform' rows='9' cols='60'></textarea><br>
+<button onclick='processFreeform()'><strong>Submit</strong></button>
+<label><input type='checkbox' id='navi' checked>Validate?</label> <br><br><br>
+
 <table>
-  <tr>
-    <th>System Name</th>
-    <th>Star(s)</th>
-    <th>South Ship(s)</th>
-    <th>North Ship(s)</th>
-  </tr>
-  <tr>
-    <td><input type="text" id="s1a"></td>
-    <td><input type="text" id="s1r"></td>
-    <td><input type="text" id="s1s"></td>
-    <td><input type="text" id="s1n"></td>
-  </tr>
+    <tr>
+        <th>System Name</th>
+        <th>Enemy Ships</th>
+        <th>Star(s)</th>
+        <th>Ally Ships</th>
+    </tr>
+    <tr>
+        <td><input type='text' id='s1n'></td>
+        <td><input type='text' id='s1e'></td>
+        <td><input type='text' id='s1s'></td>
+        <td><input type='text' id='s1a'></td>
+    </tr>
+    <tr>
+        <td><input type='text' id='s2n'></td>
+        <td><input type='text' id='s2e'></td>
+        <td><input type='text' id='s2s'></td>
+        <td><input type='text' id='s2a'></td>
+    </tr>
+    <tr>
+        <td><input type='text' id='s3n'></td>
+        <td><input type='text' id='s3e'></td>
+        <td><input type='text' id='s3s'></td>
+        <td><input type='text' id='s3a'></td>
+    </tr>
+    <tr>
+        <td><input type='text' id='s4n'></td>
+        <td><input type='text' id='s4e'></td>
+        <td><input type='text' id='s4s'></td>
+        <td><input type='text' id='s4a'></td>
+    </tr>
+    <tr>
+        <td><input type='text' id='s5n'></td>
+        <td><input type='text' id='s5e'></td>
+        <td><input type='text' id='s5s'></td>
+        <td><input type='text' id='s5a'></td>
+    </tr>
+    <tr>
+        <td><input type='text' id='s6n'></td>
+        <td><input type='text' id='s6e'></td>
+        <td><input type='text' id='s6s'></td>
+        <td><input type='text' id='s6a'></td>
+    </tr>
+    <tr>
+        <td><input type='text' id='s7n'></td>
+        <td><input type='text' id='s7e'></td>
+        <td><input type='text' id='s7s'></td>
+        <td><input type='text' id='s7a'></td>
+    </tr>
+    <tr>
+        <td><input type='text' id='s8n'></td>
+        <td><input type='text' id='s8e'></td>
+        <td><input type='text' id='s8s'></td>
+        <td><input type='text' id='s8a'></td>
+    </tr>
+    <tr>
+        <td><input type='text' id='s9n'></td>
+        <td><input type='text' id='s9e'></td>
+        <td><input type='text' id='s9s'></td>
+        <td><input type='text' id='s9a'></td>
+    </tr>
+    <tr class='hidden'>
+        <td><input type='text' id='s10n'></td>
+        <td><input type='text' id='s10e'></td>
+        <td><input type='text' id='s10s'></td>
+        <td><input type='text' id='s10a'></td>
+    </tr>
+    <tr class='hidden'>
+        <td><input type='text' id='s11n'></td>
+        <td><input type='text' id='s11e'></td>
+        <td><input type='text' id='s11s'></td>
+        <td><input type='text' id='s11a'></td>
+    </tr>
+    <tr class='hidden'>
+        <td><input type='text' id='s12n'></td>
+        <td><input type='text' id='s12e'></td>
+        <td><input type='text' id='s12s'></td>
+        <td><input type='text' id='s12a'></td>
+    </tr>
+    <tr class='hidden'>
+        <td><input type='text' id='s13n'></td>
+        <td><input type='text' id='s13e'></td>
+        <td><input type='text' id='s13s'></td>
+        <td><input type='text' id='s13a'></td>
+    </tr>
+    <tr class='hidden'>
+        <td><input type='text' id='s14n'></td>
+        <td><input type='text' id='s14e'></td>
+        <td><input type='text' id='s14s'></td>
+        <td><input type='text' id='s14a'></td>
+    </tr>
+    <tr class='hidden'>
+        <td><input type='text' id='s15n'></td>
+        <td><input type='text' id='s15e'></td>
+        <td><input type='text' id='s15s'></td>
+        <td><input type='text' id='s15a'></td>
+    </tr>
+    <tr class='hidden'>
+        <td><input type='text' id='s16n'></td>
+        <td><input type='text' id='s16e'></td>
+        <td><input type='text' id='s16s'></td>
+        <td><input type='text' id='s16a'></td>
+    </tr>
+    <tr class='hidden'>
+        <td><input type='text' id='s17n'></td>
+        <td><input type='text' id='s17e'></td>
+        <td><input type='text' id='s17s'></td>
+        <td><input type='text' id='s17a'></td>
+    </tr>
+    <tr class='hidden'>
+        <td><input type='text' id='s18n'></td>
+        <td><input type='text' id='s18e'></td>
+        <td><input type='text' id='s18s'></td>
+        <td><input type='text' id='s18a'></td>
+    </tr>
 </table>
 
+<button onclick='addRows()' id='addButton'>More Systems</button>
+<button onclick='removeRows()' id='removeButton'>Fewer Systems</button>
+<button onclick='clearTable()'>Clear</button>
+<button onclick='processCells()'><strong>Submit</strong></button>
+</div><br>
+
+<div id='outputArea'>
+<label for='output'><h2>Output</h2></label>
+<button id='clippy' onclick='clip()'>Copy to Clipboard</button><br>
+<textarea id='output' rows='47' cols='47'>Blank</textarea>
+</div>
+
 </body>
-</html> 
+</html>
