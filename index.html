@@ -105,8 +105,8 @@
     function dataCommanderData() {
         //Thoroughly verifies data integrity
         if (systemArray.length != 4) {
-            alert('Error: Improper data format for system ' + activeSystem + ' "' + systemArray[0] + '". Make sure your data is formatted as "system name, enemy ships, star(s), ally ships" with exact comma structure. If this is already correct, check for double spaces.');
-            throw new Error('Error: Improper data format for system ' + activeSystem + ' "' + systemArray[0] + '". Make sure your data is formatted as "system name, enemy ships, star(s), ally ships" with exact comma structure. If this is already correct, check for double spaces.');
+            alert('Error: Improper data format for system ' + activeSystem + ' "' + systemArray[0] + '". Make sure your data is formatted as "system name, enemy ships, star(s), ally ships" with exact comma structure. If this is already correct, check for blank lines and double spaces.');
+            throw new Error('Error: Improper data format for system ' + activeSystem + ' "' + systemArray[0] + '". Make sure your data is formatted as "system name, enemy ships, star(s), ally ships" with exact comma structure. If this is already correct, check for blank lines and double spaces.');
         } else if (systemArray[2] === '') {
             alert('Error: System ' + activeSystem + ' "' + systemArray[0] + '" has no star!');
             throw new Error('Error: System ' + activeSystem + ' "' + systemArray[0] + '" has no star!');
