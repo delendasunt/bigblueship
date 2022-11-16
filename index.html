@@ -160,13 +160,13 @@
         }
         // Checks for a valid number of stars (RULES)
         if (systemArray[2] === '') {
-            errorQueue.push(`System ${activeSystem} "${systemArray[0]} has no star!`);
+            errorQueue.push(`System ${activeSystem} "${systemArray[0]}" has no star!`);
         } else if (systemArray[2].length !== 2 && systemArray[2].length !== 4) {
             errorQueue.push(`System ${activeSystem} "${systemArray[0]}" either has too many stars or has otherwise malformed star data.`);;
         }
         // Checks for abandoned stars (RULES)
         if (systemArray[1] === '' && systemArray[3] === '') {
-            errorQueue.push(`System ' + activeSystem + ' "' + systemArray[0] + '" has no ships!`);
+            errorQueue.push(`System ${activeSystem} "${systemArray[0]}" has no ships!`);
         }
         return;
     }
