@@ -20,7 +20,6 @@
     #clippy {display:none}
     #output {
         display:none;
-        background-color:rgb(125, 222, 143);
     }
     #errors {background-color:rgb(222, 115, 115)}
     th {width:104px}
@@ -30,6 +29,8 @@
     const backupFields = [0-71]
     const cellIndex = ['s1n','s1e','s1s','s1a','s2n','s2e','s2s','s2a','s3n','s3e','s3s','s3a','s4n','s4e','s4s','s4a','s5n','s5e','s5s','s5a','s6n','s6e','s6s','s6a','s7n','s7e','s7s','s7a','s8n','s8e','s8s','s8a','s9n','s9e','s9s','s9a','s10n','s10e','s10s','s10a','s11n','s11e','s11s','s11a','s12n','s12e','s12s','s12a','s13n','s13e','s13s','s13a','s14n','s14e','s14s','s14a','s15n','s15e','s15s','s15a','s16n','s16e','s16s','s16a','s17n','s17e','s17s','s17a','s18n','s18e','s18s','s18a'];
     var piece = {b1A:'null', b1B:'null', b1C:'null', b2A:'null', b2B:'null', b2C:'null', b3A:'null', b3B:'null', b3C:'null', g1A:'null', g1B:'null', g1C:'null', g2A:'null', g2B:'null', g2C:'null', g3A:'null', g3B:'null', g3C:'null', r1A:'null', r1B:'null', r1C:'null', r2A:'null', r2B:'null', r2C:'null', r3A:'null', r3B:'null', r3C:'null', y1A:'null', y1B:'null', y1C:'null', y2A:'null', y2B:'null', y2C:'null', y3A:'null', y3B:'null', y3C:'null'};
+    var problemPieces = {};
+    var binarySystems = {};
     var recurses = 0;
     var color = 'w';
     var size = 0;
@@ -44,15 +45,35 @@
     var mapText = 'nothin yet';
     var longerform = '';
     var systemCount = 0;
-    var n = 0;
+    // var n = 0;
     var errorQueue = [];
     var skipSystem = false;
     var skipPiece = false;
     var backupText = '';
     var restorable = false;
+    var southHW = 19;
+    var northHW = 91;
+    var huntLog = [];
+    var targetSystem = 'nowhere';
+    var systemNames = [];
+    var sacrifice = ''
+    var actionsToGo = 0
+    var currentPlayer = 'Vader'
+    var southWorlds = [];
+    var northWorlds = [];
+    var badBinaries = {};
+    var errorTally = 0;
+    var phase = '"nowhen"';
+    var currentLine = [];
+    var tableEntry = false;
+    var northHWText = 'West';
+    var whichButton = 'clippy';
 
+    // Re-initializes variables to allow multiple trials without reloading page
     function init() {
-        piece = {b1A:'null', b1B:'null', b1C:'null', b2A:'null', b2B:'null', b2C:'null', b3A:'null', b3B:'null', b3C:'null', g1A:'null', g1B:'null', g1C:'null', g2A:'null', g2B:'null', g2C:'null', g3A:'null', g3B:'null', g3C:'null', r1A:'null', r1B:'null', r1C:'null', r2A:'null', r2B:'null', r2C:'null', r3A:'null', r3B:'null', r3C:'null', y1A:'null', y1B:'null', y1C:'null', y2A:'null', y2B:'null', y2C:'null', y3A:'null', y3B:'null', y3C:'null'}
+        piece = {b1A:'null', b1B:'null', b1C:'null', b2A:'null', b2B:'null', b2C:'null', b3A:'null', b3B:'null', b3C:'null', g1A:'null', g1B:'null', g1C:'null', g2A:'null', g2B:'null', g2C:'null', g3A:'null', g3B:'null', g3C:'null', r1A:'null', r1B:'null', r1C:'null', r2A:'null', r2B:'null', r2C:'null', r3A:'null', r3B:'null', r3C:'null', y1A:'null', y1B:'null', y1C:'null', y2A:'null', y2B:'null', y2C:'null', y3A:'null', y3B:'null', y3C:'null'};
+        problemPieces = {};
+        binarySystems = {};
         recurses = 0;
         color = 'w';
         size = 0;
@@ -63,73 +84,134 @@
         systemArray = 'undiscovered'
         systemArrayIndex = 99;
         readHead = 88;
-        longerform = ''
-        systemCount = 0
-        n = 0
         fullMap = 'endlessvoidofspace';
         mapText = 'nothin yet';
+        longerform = '';
+        systemCount = 0;
+        // backupText = '';
+        // restorable = false;
+        // n = 0;
         errorQueue = [];
         skipSystem = false;
         skipPiece = false;
+        southHW = 19;
+        northHW = 91;
+        huntLog = [];
+        targetSystem = 'nowhere';
+        systemNames = [];
+        sacrifice = ''
+        actionsToGo = 0
+        currentPlayer = 'Vader'
+        southWorlds = [];
+        northWorlds = [];
+        badBinaries = {};
+        errorTally = 0;
+        phase = '"nowhen"';
+        currentLine = [];
+        northHWText = 'West';
         document.getElementById('errorLog').style.display = 'none';
-        document.getElementById('output').style.backgroundColor = 'rgb(125, 222, 143)';
+        document.getElementById('output').style.display = 'none';
+        document.getElementById('output').style.backgroundColor = 'white';
+        document.getElementById('clippy').style.display = 'none';
         return;
     }
 
     // Cleans input and passes to translator function
-    function processFreeform() {
-        // Re-initializes variables to allow multiple trials without reloading
+    function processFreeform(button) {
         init();
-        // Removes spaces and extraneous separators from input, and converts to array of individual systems
-        fullMap = document.getElementById('longform').value.toLowerCase().replace(/ /g, '').split(/[\r?\n;]+/).filter(Boolean);
+        whichButton = button;
+        // Removes superfluous separators from input, adds placeholder text to blank system names, and converts to array of individual systems
+        fullMap = document.getElementById('longform').value.split(/[\r?\n;]+/).filter(Boolean).join('\n').replace(/^,/gm, '[No Name],');
+        // Backs up system names as written before spaces and capitals are removed
+        systemNames = fullMap.match(/^([^,]*?),/gm);
+        // Removes spaces and capitals from processed input to simplify interpretation
+        fullMap = fullMap.toLowerCase().replace(/ /g, '').split('\n');
+        // Splits each system into an array of individual data fields
+        for (let i = 0; i < fullMap.length; i++) {
+            fullMap[i] = fullMap[i].split(',');
+            // Removes commas and linebreaks from system names to fix my sloppy regex
+            systemNames[i] = systemNames[i].replace(/^\s|,/gm, '');
+        }
+        // Copies input to table for easier troubleshooting
+        // Currently, this happens after input cleaning, which may or may not be desirable
+        // Doing it with the raw input will be far more complicated though
+        if (tableEntry === false) {
+            clearTable();
+            if (fullMap.length > 9) {
+                addRows();
+            } else {
+                removeRows();
+            }
+            for (let i = 0; i < 72; i = i + 4) {
+                if (i / 4 < fullMap.length) {
+                    document.getElementById(cellIndex[i]).value = systemNames[i / 4]
+                    for (let n = 1; n < 4; n++) {
+                        document.getElementById(cellIndex[i + n]).value = fullMap[i / 4][n];
+                    }
+                } else {
+                    break;
+                }
+            }
+        } else {
+            tableEntry = false;
+        }
         blueShip();
     }
 
+    // Compiles table entries to longform map data, copies it into freetext field for easier troubleshooting, then passes to the freeform parser
     function processCells() {
-        // Compiles table entries to longform map data, copies it into freetext field for easier troubleshooting, then passes to the freeform parser
+        tableEntry = true;
         for (let i = 0; i < 72; i = i + 4) {
-            if (document.getElementById(cellIndex[i + 2]).value != '') {
-                systemCount++;
+            currentLine = []
+            // Checks for blank rows
+            if (document.getElementById(cellIndex[i]).value === '' && document.getElementById(cellIndex[i + 1]).value === '' && document.getElementById(cellIndex[i + 2]).value === '' && document.getElementById(cellIndex[i + 3]).value === '') {
+                longerform += '\n'
+            } else {
+                for (let n = i; n < i + 4; n++) {
+                    if (n === i && document.getElementById(cellIndex[n]).value === '') {
+                        currentLine.push('[No Name]');
+                    } else if (n === i) {
+                        currentLine.push(document.getElementById(cellIndex[n]).value);
+                    } else {
+                        currentLine.push(document.getElementById(cellIndex[n]).value.replace(/[^a-zA-Z0-9]/g, ''));
+                    }
+                }
+                longerform += currentLine + ';\n';
             }
         }
-        for (let i = 0; i < 72 && systemCount > 0; i = i + 4) {
-            if (document.getElementById(cellIndex[i + 2]).value !== '') {
-                for (n = i; n < i + 3; n++) {
-                    longerform += document.getElementById(cellIndex[n]).value.replace(/[,;]/g, '') + ',';
-                }
-                longerform += document.getElementById(cellIndex[n]).value;
-                longerform += ';';
-                if (systemCount > 1) {
-                    longerform += '\n';
-                }
-                systemCount--;
-            }
-        }
-        document.getElementById('longform').value = longerform;
-        processFreeform();
+        clearFreeform();
+        document.getElementById('longform').value = longerform.replace(/\n*$|^\n*/g, '')
+        processFreeform('submitCells');
     }
 
     // Master function for the actual translation work
     function blueShip() {
-        // Verifies overall data integrity if requested
-        if (fullMap.length > 18 && document.getElementById('navi').checked === true) {
-            errorQueue.push('Too many systems!');
+        // Checks for excess systems or blank input if requested (RULES)
+        if (document.getElementById('navi').checked === true) {
+            if (fullMap.length > 18) {
+                errorTally++;
+                errorQueue.push(`(${errorTally}.)\nToo many systems! Check that you have not used semicolons or newline characters except to separate independent systems.`);
+            } else if (fullMap.length < 1) {
+                errorTally++;
+                errorQueue.push(`(${errorTally}.)\nBlank input!`)
+            }
         }
         // Resolves each system one-by-one
-        for (activeSystem = 1; activeSystem <= fullMap.length; activeSystem++) {
-            // Splits the current system into separate data fields
-            systemArray = fullMap[activeSystem - 1].split(',');
+        for (activeSystem = 0; activeSystem < fullMap.length; activeSystem++) {
+            // Detects manual homeworld assignments and logs duplicates
+            assignHomeworlds();
             // Verifies the current system's data integrity if requested
             if (document.getElementById('navi').checked === true) {
                 dataCommanderData();
             }
-            // Bypasses systems with critical data errors
+            // Bypasses systems with critical data errors found by dataCommanderData()
             if (skipSystem === false) {
-                // Resolves each of the current system's data field one-by-one
+                // For systems not bypassed, resolves each of the current system's data fields one-by-one
                 for (systemArrayIndex = 1; systemArrayIndex < 4; systemArrayIndex++) {
-                    for (readHead = 0; readHead < systemArray[systemArrayIndex].length; readHead = readHead + 2) {
+                    for (readHead = 0; readHead < fullMap[activeSystem][systemArrayIndex].length; readHead = readHead + 2) {
                         generateData();
                         if (skipPiece === false) {
+                            recurses = 0;
                             assignData();
                         }
                     }
@@ -138,40 +220,121 @@
         }
         // Generates and displays output
         writeData();
-        document.getElementById('output').style.display = 'block';
-        document.getElementById('clippy').style.display = 'block';
-        // Notifies the user of any errors detected
-        if (errorQueue.length !== 0) {
-            document.getElementById('output').style.backgroundColor = 'red';
-            document.getElementById('errorLog').style.display = 'block';
-            document.getElementById('errors').value = errorQueue.join('\n\n');
-            alert('Uh-oh! There seems to have been an error. Check the error log for more details.');
-            throw new Error(`Errors:\n\n${errorQueue.join('\n\n')}`);
+        // Handles errors if requested
+        if (document.getElementById('navi').checked) {
+            // Compiles multipart error messages
+            for (let i = 0; i < Object.keys(problemPieces).length; i++) {
+                errorTally++;
+                errorQueue.push(`(${errorTally}.)\n${Object.values(problemPieces)[i]}`);
+            }
+            if (Object.keys(binarySystems).length > 2) {
+                errorTally++;
+                errorQueue.push(`(${errorTally}.)\nMore than two binary star systems! Binary stars were found in the following systems:\n${Object.values(binarySystems).join('\n')}`);
+            }
+            if (Object.keys(badBinaries).length > 0) {
+                errorTally++;
+                errorQueue.push(`(${errorTally}.)\nThe following systems have binary stars, but were not designated as homeworlds:\n${Object.values(badBinaries).join('\n')}`);
+            }
+            // These two should be for-loopable together with a bit of creativity
+            if (northWorlds.length > 0) {
+                northWorlds.push(`- ${northHW}: ${systemNames[northHW - 1]}`);
+                errorTally++;
+                errorQueue.push(`(${errorTally}).\nMore than one system designated as north homeworld! North homeworld flags (*/[n]) were found in the following systems:\n${northWorlds.join('\n')}`);
+            }
+            if (southWorlds.length > 0) {
+                southWorlds.push(`- ${southHW}: ${systemNames[southHW - 1]}`);
+                errorTally++;
+                errorQueue.push(`(${errorTally}).\nMore than one system designated as south homeworld! South homeworld flags (**/[s]) were found in the following systems:\n${southWorlds.join('\n')}`);
+            }
+            // Writes and displays all detected errors
+            if (errorQueue.length !== 0) {
+                document.getElementById('output').style.backgroundColor = 'red';
+                document.getElementById('errorLog').style.display = 'block';
+                document.getElementById('errors').value = errorQueue.join('\n\n');
+                document.getElementById('errorHeading').innerHTML = `Errors/Warnings (${errorQueue.length})`;
+                buttonResponse('<strong>Error</strong>');
+            } else {
+                /* document.getElementById('submitFreeform').innerHTML = '<strong>Success!</strong>';
+                document.getElementById('submitCells').innerHTML = '<strong>Success!</strong>';
+                setTimeout(() => {
+                    document.getElementById('submitFreeform').innerHTML = '<strong>Submit</strong>';
+                    document.getElementById('submitCells').innerHTML = '<strong>Submit</strong>';
+                }, 2500)*/
+                clip();
+                document.getElementById('output').style.backgroundColor = 'rgb(125, 222, 143)';
+            }
+        } else {
+            buttonResponse('<strong>Processed</strong>')
+            document.getElementById('output').style.backgroundColor = 'white';
         }
     }
 
-    // Thoroughly verifies data integrity for each system
+    // Detects manual homeworld assignments and logs duplicates
+    // Detecting homeworlds can probably be more sophisticated with some regex
+    function assignHomeworlds() {
+        if (fullMap[activeSystem][0].includes('[s]') || fullMap[activeSystem][0].includes('**')) {
+            if ((fullMap[activeSystem][0].includes('[n]') || fullMap[activeSystem][0].match(/(?<!\*)\*(?!\*)|\*{3,}/) !== null) && document.getElementById('navi').checked) {
+                if (northHW !== 91){
+                    northWorlds.push(`- ${northHW}: ${systemNames[northHW - 1]}`)
+                }
+                northHW = activeSystem + 1;
+                errorTally++;
+                errorQueue.push(`(${errorTally}.)\nSystem ${activeSystem + 1} "${systemNames[activeSystem]}" is flagged as both the north and south homeworld!\n\n* or [n] in a system's name will flag it as the north homeworld; ** or [s] will flag it as the south homeworld.`)
+            }
+            if (southHW !== 19) {
+                southWorlds.push(`- ${southHW}: ${systemNames[southHW - 1]}`);
+            }
+            southHW = activeSystem + 1;
+            return;
+        } else if (fullMap[activeSystem][0].includes('[n]') || fullMap[activeSystem][0].includes('*')) {
+            if (northHW !== 91) {
+                northWorlds.push(`- ${northHW}: ${systemNames[northHW - 1]}`)
+            }
+            if (fullMap.length === 1) {
+                errorTally++;
+                errorQueue.push(`(${errorTally}.)\nThe only submitted system was designated as the north homeworld with * or [n] in its system name. A lone system cannot be effectively designated as the north homeworld because HWL requires south to play first.`)
+                return;
+            } else {
+                northHW = activeSystem + 1;
+                return;
+            }
+        }
+    }
+
+    // Verifies data integrity for each system
     function dataCommanderData() {
         skipSystem = false;
         // Checks comma structure
-        if (systemArray.length !== 4) {
-            errorQueue.push(`Improper data format for system ${activeSystem} "${systemArray[0]}". Make sure your data is formatted as "system name, enemy ships, star(s), ally ships" with exact comma structure and no internal semicolons or linebreaks.`);
+        if (fullMap[activeSystem].length !== 4) {
+            errorTally++;
+            errorQueue.push(`(${errorTally}.)\nImproper data format for system ${activeSystem + 1} "${systemNames[activeSystem]}".\n\nMake sure your data is formatted as "system name, enemy ships, star(s), ally ships" with exact comma structure and no internal semicolons or linebreaks.`);
             skipSystem = true;
             return;
         }
-        // Checks for a valid number of stars (RULES)
-        if (systemArray[2] === '') {
-            errorQueue.push(`System ${activeSystem} "${systemArray[0]}" has no star!`);
-        } else if (systemArray[2].length !== 2 && systemArray[2].length !== 4) {
-            errorQueue.push(`System ${activeSystem} "${systemArray[0]}" either has too many stars or has otherwise malformed star data.`);;
+        // Checks for a valid number of stars
+        if (fullMap[activeSystem][2] === '') {
+            errorTally++;
+            errorQueue.push(`(${errorTally}.)\nSystem ${activeSystem + 1} "${systemNames[activeSystem]}" has no star!`);
+            } else if (fullMap[activeSystem][2].length !== 2 && fullMap[activeSystem][2].length !== 4) {
+                errorTally++;
+                errorQueue.push(`(${errorTally}.)\nEither system ${activeSystem + 1} "${systemNames[activeSystem]}" has too many stars, or it has otherwise malformed star data.`);;
         }
-        // Checks for abandoned stars (RULES)
-        if (systemArray[1] === '' && systemArray[3] === '') {
-            errorQueue.push(`System ${activeSystem} "${systemArray[0]}" has no ships!`);
+        // Checks for abandoned stars
+        if (fullMap[activeSystem][1] === '' && fullMap[activeSystem][3] === '') {
+            errorTally++;
+            errorQueue.push(`(${errorTally}.)\nSystem ${activeSystem + 1} "${systemNames[activeSystem]}" has no ships! If this is correct and there are no other errors, the output should still be valid.`);
+        }
+        // Logs binary stars to be checked at end of program [WIP]
+        if (fullMap[activeSystem][2].length === 4 || fullMap[activeSystem][2].length === 5) {
+            binarySystems[activeSystem] = `- ${activeSystem + 1}: ${systemNames[activeSystem]}`;
+            if (southHW - 1 !== activeSystem && northHW - 1 !== activeSystem) {
+                badBinaries[activeSystem + 1] = `- ${activeSystem + 1}: ${systemNames[activeSystem]}`;
+            }
         }
         return;
     }
 
+    // Interprets text data and sets appropriate variables to match
     function generateData() {
         if (systemArrayIndex === 2) {
             activeOwner = 'null';
@@ -180,32 +343,39 @@
         } else {
             activeOwner = '"north"';
         }
-        color = systemArray[systemArrayIndex][readHead];
-        size = systemArray[systemArrayIndex][readHead + 1];
+        color = fullMap[activeSystem][systemArrayIndex][readHead];
+        size = fullMap[activeSystem][systemArrayIndex][readHead + 1];
         serial = 'A';
         // Checks for typos if requested; possibly better implemented all at once with a regex matching invalid characters? This is more precise though.
         if (color + size + serial in piece || document.getElementById('navi').checked === false) {
             skipPiece = false;
             return;
         } else {
-            errorQueue.push(`Typo in system ${activeSystem} "${systemArray[0]}": "${color}${size}" isn't a valid piece.`);
+            errorTally++;
+            if (size === undefined) {
+                size = '';
+            }
+            errorQueue.push(`(${errorTally}.)\nTypo in system ${activeSystem + 1} "${systemNames[activeSystem]}": "${color}${size}" isn't a valid piece.`);
             skipPiece = true;
-            // Offsets readHead to reduce superfluous errors incurred by a missed keystroke
-            if (systemArray[systemArrayIndex].length % 2 !== 0 && readHead % 2 === 0) {
+            // Offsets readHead to reduce superfluous errors incurred by a missed or excess keystroke
+            if (fullMap[activeSystem][systemArrayIndex].length % 2 !== 0 && readHead % 2 === 0) {
                 readHead--;
             }
             return;
         }
     }
 
+    // Converts the current field's data to HWL format
     function assignData() {
         activePiece = color + size + serial;
+        // Checks for excess identical pieces if requested
         if (recurses > 2 && document.getElementById('navi').checked === true) {
-            errorQueue.push(`More than three ${color}${size}s! An extra was found in system ${activeSystem} "${systemArray[0]}"!`);
+            hunt(color + size, 4);
+            problemPieces[color + size] = `More than three ${color}${size}s! ${color}${size}s were found in the following systems:\n${huntLog.join('\n')}`;
             return;
         } else if (piece[activePiece] === 'null') {
+            piece[activePiece] = `{"at": ${activeSystem + 1}, "owner": ${activeOwner}}`;
             recurses = 0;
-            piece[activePiece] = '{"at": ' + activeSystem + ', "owner": ' + activeOwner + '}';
             return;
         } else if (serial === 'A') {
             serial = 'B';
@@ -222,8 +392,9 @@
         }
     }
 
+    // Commits formatted data to visible output
     function writeData() {
-                document.getElementById('output').innerHTML = '{\n&#9;"map": {';
+        document.getElementById('output').innerHTML = '{\n&#9;"map": {';
         var p = 0;
         while (p < 36) {
             for (let i = 0; i < 9; i++) {
@@ -235,7 +406,107 @@
             }
             document.getElementById('output').innerHTML += '\n';
         }
-        document.getElementById('output').innerHTML += '&#9;},\n&#9;"homeworldData": {"south":1,"north":2},\n&#9;"turn": "south",\n&#9;"actions": {"sacrifice":null,"number":1},\n&#9;"phase": "playing"\n}'
+        // Retrieves data from options menu regarding current turn status
+        getAction();
+        getHomeworlds();
+        document.getElementById('output').innerHTML += `&#9;},\n&#9;"homeworldData": {"south":${southHW}${northHWText}},\n&#9;"turn": ${currentPlayer},\n&#9;"actions": {"sacrifice":${sacrifice},"number":${actionsToGo}},\n&#9;"phase": ${phase}\n}`;
+        document.getElementById('output').style.display = 'block';
+        document.getElementById('clippy').style.display = 'block';
+        return;
+    }
+
+    // Retrieves data from options menu regarding current turn status
+    function getAction() {
+        let sacrificeFinder = document.getElementsByName('actionType');
+        for (let i = 0; i < sacrificeFinder.length; i++) {
+            if (sacrificeFinder[i].checked) {
+                sacrifice = sacrificeFinder[i].value;
+            }
+        }
+        if (fullMap.length > 2 && document.getElementById('navi').checked) {
+            document.getElementById('phasePlaying').checked = true;
+        } else if (fullMap.length < 2 && document.getElementById('navi').checked) {
+            forceAnyOneNorth();
+        }
+        if (document.getElementById('turnNorth').checked) {
+            currentPlayer = '"north"';
+        } else {
+            currentPlayer = '"south"';
+        }
+        if (document.getElementById('3actions').checked) {
+            actionsToGo = 3;
+        } else if (document.getElementById('2actions').checked) {
+            actionsToGo = 2;
+        } else {
+            actionsToGo = 1;
+        }
+        if (document.getElementById('phaseSetup').checked) {
+            phase = '"setup"'
+        } else {
+            phase = '"playing"'
+        }
+        return;
+    }
+
+    // Verifies and finalizes homeworld assignments
+    function getHomeworlds() {
+        if (fullMap.length === 1) {
+            southHW = 1;
+        } else if (southHW === 19 || northHW === 91) {
+            // Case if South WAS set and North was NOT set
+            if (southHW !== 19 && northHW === 91) {
+                if (southHW === 1) {
+                    northHW = fullMap.length;
+                } else {
+                    northHW = 1;
+                }
+                errorTally++;
+                errorQueue.push(`(${errorTally}.)\nIt looks like you tried to designate system ${southHW} "${systemNames[southHW - 1]}" as the South homeworld, but didn't designate a North homeworld! The North homeworld has defaulted to system ${northHW} "${systemNames[northHW - 1]}".\n\nTo designate homeworlds, put * or [n] in the system name for the North homeworld, and ** or [s] for South.`);
+            // Case if South was NOT set and North WAS set
+            } else if (southHW === 19 && northHW !== 91) {
+                if (northHW = fullMap.length) {
+                    southHW = 1;
+                } else {
+                    southHW = fullMap.length;
+                }
+                errorTally++;
+                errorQueue.push(`(${errorTally}.)\nIt looks like you tried to designate system ${northHW} "${systemNames[northHW - 1]}" as the North homeworld, but didn't designate a South homeworld! The South homeworld has defaulted to system ${southHW} "${systemNames[southHW - 1]}".\n\nTo designate homeworlds, put * or [n] in the system name for the North homeworld, and ** or [s] for South.`);
+            // Case if neither South nor North was set
+            } else {
+                northHW = 1;
+                southHW = fullMap.length;
+            }
+        }
+        // This should never occur without another error also occurring; seems superfluous
+        /* if (northHW === southHW && document.getElementById('navi').checked) {
+            errorTally++;
+            errorQueue.push(`(${errorTally}.)\nSystem ${northHW} "${systemNames[northHW - 1]}" is designated as homeworld for both players! This could be an input error or the result of a default assignment conflicting with a manual assignment.\n\nTo designate homeworlds, put * or [n] in the system name for the north homeworld, and ** or [s] for the south.`)
+        } */
+        if (northHW === 91) {
+            northHWText = '';
+        } else {
+            northHWText = `,"north":${northHW}`;
+        }
+        delete badBinaries[northHW];
+        delete badBinaries[southHW];
+        return;
+    }
+
+    // Generates a list of systems with data matching a given search, usually to condense error messages
+    // This would be better if it could handle regex (which the .includes method can't)
+    function hunt(target, scope) {
+        huntLog = [];
+            for (let systemHunt = 0; systemHunt < fullMap.length; systemHunt++) {
+                if (scope === 4) {
+                    if (fullMap[systemHunt].join('').includes(target)) {
+                        huntLog.push(`- ${systemHunt + 1}: "${systemNames[systemHunt]}"`)
+                    }
+                } else {
+                    if (fullMap[systemHunt][scope].includes(target)) {
+                        huntLog.push(`- ${systemHunt + 1}: "${systemNames[systemHunt]}"`)
+                    }
+                }
+            }
         return;
     }
 
@@ -296,14 +567,81 @@
         }
     }
 
+    function toggleNames() {
+        const nameList = document.getElementsByClassName('nameColumn');
+        if (document.getElementById('nameToggle').checked) {
+            for (let i = 0; i < nameList.length; i++) {
+                nameList[i].style.display = '';
+            }
+        } else {
+            for (let i = 0; i < nameList.length; i++) {
+                nameList[i].style.display = 'none';
+            }
+        }
+    }
+
+    function showOptions() {
+        document.getElementById('showOptions').style.display = 'none';
+        document.getElementById('hideOptions').style.display = 'block';
+        document.getElementById('options').style.display = 'block';
+    }
+
+    function hideOptions() {
+        document.getElementById('showOptions').style.display = 'block';
+        document.getElementById('hideOptions').style.display = 'none';
+        document.getElementById('options').style.display = 'none';
+    }
+
+    // Sets the action selector to 1 remaining when 'any' is selected
+    function oneActionLeft() {
+        if (document.getElementById('navi').checked) {
+            document.getElementById('1action').checked = true;
+        }
+    }
+
+    // Sets the action selector off 'any' when more than one action remaining is selected
+    function forceSac() {
+        if (document.getElementById('navi').checked && document.getElementById('any').checked) {
+            // let actionChoice = ['move', 'build', 'capture', 'trade']
+            // let d4 = Math.floor(Math.random() * 4);
+            document.getElementById('move').checked = true;
+            document.getElementById('phasePlaying').checked = true;
+        }
+    }
+
+    // Sets the turn selector to 'playing' whenever a sacrifice action is selected
+    function forcePlaying() {
+        if (document.getElementById('navi').checked) {
+            document.getElementById('phasePlaying').checked = true;
+        }
+    }
+
+    // Sets the action selector to any one action and north's turn whenever 'setup' is selected as the phase, or when a map with only one system is submitted
+    function forceAnyOneNorth() {
+        if (document.getElementById('navi').checked) {
+            document.getElementById('any').checked = true;
+            document.getElementById('1action').checked = true;
+            document.getElementById('turnNorth').checked = true;
+            document.getElementById('phaseSetup').checked = true;
+        }
+    }
+
+    // Copies output to clipboard
     function clip() {
         mapText = document.getElementById('output').value;
         navigator.clipboard.writeText(mapText).then(() => {
-            document.getElementById('clippy').innerText = 'Copied!'
-            setTimeout(() => {
-                document.getElementById('clippy').innerText = 'Copy to Clipboard'
-            }, 5000)
+            buttonResponse('<strong>Copied to clipboard!</strong>');
         });
+        return;
+    }
+
+    function buttonResponse(responseText) {
+        let whichButtonBackup = document.getElementById(whichButton).innerHTML;
+        document.getElementById(whichButton).innerHTML = responseText;
+        setTimeout(() => {
+            document.getElementById(whichButton).innerHTML = whichButtonBackup;
+            whichButton = 'clippy';
+        }, 5000);
         return;
     }
 </script>
@@ -311,161 +649,214 @@
 <body>
 
 <div>
-<h1>HWL Importable Map Converter</h1>
-<button onclick='showInstructions()' id='showInstructions'><strong>Show Instructions</strong></button>
-<button onclick='hideInstructions()' id='hideInstructions'><strong>Hide Instructions</strong></button>
+    <h1>HWL Importable Map Converter</h1>
+    <!--Show/Hide Instructions should be a single-button toggle-->
+    <button onclick='showInstructions()' id='showInstructions'><strong>Show Instructions</strong></button>
+    <button onclick='hideInstructions()' id='hideInstructions'><strong>Hide Instructions</strong></button>
 </div>
 <div id="instructions">
-<p>The Big Blue Ship is a tool to convert Homeworlds gamestates from intuitive plaintext to specialized markup which can be imported into the <a href='https://homeworlds-live2.glitch.me/sandbox'>Homeworlds Live Sandbox</a>. Being able to conveniently play both sides of an ongoing game makes position analysis much easier if you aren't so good at visualizing the gamestate after several hypothetical moves!</p>
-<p>The tool is simple to use, but the syntax requirements are moderately precise:</p>
-<p>In the freeform text entry field below: transcribe each system as follows, without quotations: "<em>system name</em>, <em>enemy ships</em>, <em>star(s)</em>, <em>ally ships</em>". Separate systems from each other with any combination of linebreaks and/or semicolons. Spaces are optional. For example, a typical starting board might look like "delendasunt, , b1r2, g3; Evil Aliens,g3,y2b3,". Organizing the data this way makes it easy to transcribe a system simply by reading it from left to right.</p>
-<p>Alternatively, you can input data points individually using the table further down the page. The syntax remains the same; but you may omit the commas: they will be added automatically. Liberal use of the tab key, and greater ease of error correction, can make this method somewhat faster than freeform typing.</p>
-<p>Note that, for now, the first two systems will always parse as the south and north homeworlds, respectively. This will become customizable soon.</p>
-<p>The tool <em>should</em> work repeatedly, but if it begins to behave strangely, try reloading the page: the odd variable has been known to get stuck every now and then. If you encounter any persistent bugs, desire more thorough documentation, or feel like cleaning up some spaghetti code, check out this project's <a href='https://https://github.com/delendasunt/blueship'>GitHub repository</a>, or message @forkofnature on the <a href='https://discord.gg/tqYPfWVkSk'>Homeworlds Discord server</a>.</p>
-<p>Enjoy!</p>
-</div>
-
-<div id='inputArea'>
-<br>
-<textarea id='longform' rows='9' cols='60' spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off" contenteditable="false">southHomeworldFirst,,r1b2,g3&#10;northHomeworldSecond,y3,g2b3,&#10;&#10;sharedColonyΣ,y1,g2,r2; sharedColonyΩ,g2,r1,y3;&#10;&#10;Spaces and Capitals Are OK, Y2 B2 B1, G3,</textarea><br>
-<button onclick='clearFreeform()'>Clear</button>
-<button onclick='restoreFreeform()'>Restore</button>
-<button onclick='processFreeform()'><strong>Submit</strong></button>
-<label><input type='checkbox' id='navi' checked>Validate?</label> <br><br><br>
-
-<div id='errorLog'>
-<h3>Error Log</h3>
-<textarea id='errors' rows='9' cols='60' spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off" contenteditable="false"></textarea><br><br><br>
-</div>
-
-<table spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off" contenteditable="false">
-    <tr>
-        <th>System Name</th>
-        <th>Enemy Ships</th>
-        <th>Star(s)</th>
-        <th>Ally Ships</th>
-    </tr>
-    <tr>
-        <td><input type='text' id='s1n' value='southHomeworldFirst'></td>
-        <td><input type='text' id='s1e' value=''></td>
-        <td><input type='text' id='s1s' value='r1b2'></td>
-        <td><input type='text' id='s1a' value='g3'></td>
-    </tr>
-    <tr>
-        <td><input type='text' id='s2n' value='northHomeworldSecond'></td>
-        <td><input type='text' id='s2e' value='y3'></td>
-        <td><input type='text' id='s2s' value='g2b3'></td>
-        <td><input type='text' id='s2a' value=''></td>
-    </tr>
-    <tr>
-        <td><input type='text' id='s3n'></td>
-        <td><input type='text' id='s3e'></td>
-        <td><input type='text' id='s3s'></td>
-        <td><input type='text' id='s3a'></td>
-    </tr>
-    <tr>
-        <td><input type='text' id='s4n' value='sharedColonyΣ'></td>
-        <td><input type='text' id='s4e' value='y1'></td>
-        <td><input type='text' id='s4s' value='g2'></td>
-        <td><input type='text' id='s4a' value='r2'></td>
-    </tr>
-    <tr>
-        <td><input type='text' id='s5n' value='sharedColonyΩ'></td>
-        <td><input type='text' id='s5e' value='g2'></td>
-        <td><input type='text' id='s5s' value='r1'></td>
-        <td><input type='text' id='s5a' value='y3'></td>
-    </tr>
-    <tr>
-        <td><input type='text' id='s6n'></td>
-        <td><input type='text' id='s6e'></td>
-        <td><input type='text' id='s6s'></td>
-        <td><input type='text' id='s6a'></td>
-    </tr>
-    <tr>
-        <td><input type='text' id='s7n' value='Spaces and Capitals Are OK'></td>
-        <td><input type='text' id='s7e' value=' Y2 B2 B1'></td>
-        <td><input type='text' id='s7s' value=' G3'></td>
-        <td><input type='text' id='s7a' value=''></td>
-    </tr>
-    <tr>
-        <td><input type='text' id='s8n'></td>
-        <td><input type='text' id='s8e'></td>
-        <td><input type='text' id='s8s'></td>
-        <td><input type='text' id='s8a'></td>
-    </tr>
-    <tr>
-        <td><input type='text' id='s9n'></td>
-        <td><input type='text' id='s9e'></td>
-        <td><input type='text' id='s9s'></td>
-        <td><input type='text' id='s9a'></td>
-    </tr>
-    <tr class='hidden'>
-        <td><input type='text' id='s10n'></td>
-        <td><input type='text' id='s10e'></td>
-        <td><input type='text' id='s10s'></td>
-        <td><input type='text' id='s10a'></td>
-    </tr>
-    <tr class='hidden'>
-        <td><input type='text' id='s11n'></td>
-        <td><input type='text' id='s11e'></td>
-        <td><input type='text' id='s11s'></td>
-        <td><input type='text' id='s11a'></td>
-    </tr>
-    <tr class='hidden'>
-        <td><input type='text' id='s12n'></td>
-        <td><input type='text' id='s12e'></td>
-        <td><input type='text' id='s12s'></td>
-        <td><input type='text' id='s12a'></td>
-    </tr>
-    <tr class='hidden'>
-        <td><input type='text' id='s13n'></td>
-        <td><input type='text' id='s13e'></td>
-        <td><input type='text' id='s13s'></td>
-        <td><input type='text' id='s13a'></td>
-    </tr>
-    <tr class='hidden'>
-        <td><input type='text' id='s14n'></td>
-        <td><input type='text' id='s14e'></td>
-        <td><input type='text' id='s14s'></td>
-        <td><input type='text' id='s14a'></td>
-    </tr>
-    <tr class='hidden'>
-        <td><input type='text' id='s15n'></td>
-        <td><input type='text' id='s15e'></td>
-        <td><input type='text' id='s15s'></td>
-        <td><input type='text' id='s15a'></td>
-    </tr>
-    <tr class='hidden'>
-        <td><input type='text' id='s16n'></td>
-        <td><input type='text' id='s16e'></td>
-        <td><input type='text' id='s16s'></td>
-        <td><input type='text' id='s16a'></td>
-    </tr>
-    <tr class='hidden'>
-        <td><input type='text' id='s17n'></td>
-        <td><input type='text' id='s17e'></td>
-        <td><input type='text' id='s17s'></td>
-        <td><input type='text' id='s17a'></td>
-    </tr>
-    <tr class='hidden'>
-        <td><input type='text' id='s18n'></td>
-        <td><input type='text' id='s18e'></td>
-        <td><input type='text' id='s18s'></td>
-        <td><input type='text' id='s18a'></td>
-    </tr>
-</table>
-
-<button onclick='addRows()' id='addButton'>More Systems</button>
-<button onclick='removeRows()' id='removeButton'>Fewer Systems</button>
-<button onclick='clearTable()'>Clear</button>
-<button onclick='restoreTable()'>Restore</button>
-<button onclick='processCells()'><strong>Submit</strong></button>
+    <p>The Big Blue Ship is a simple tool which generates importable maps for the <a href='https://homeworlds-live2.glitch.me/sandbox'>Homeworlds Live Sandbox</a> by converting intuitively formatted position data to HWL's specialized markup. This can be useful for planning your moves in asynchronous games on other platforms, and for working out the solutions to puzzles. Note that the tool is currently in beta: see the final section of these instructions for more info.</p>
+    <h2>Basics</h2>
+    <p>There are currently two methods to input a map: table entry and freeform entry. Syntax and functionality are largely identical between the two entry methods; the main difference is in how you interact with them. Table entry is easiest if your input device has a convenient tab key; if it does not, freeform entry may be easier.</p>
+    <p>To input your map via table entry, fill out the data indicated by the column headers for each system, one system per row, following the syntax guide below, starting with the enemy homeworld and ending with your homeworld. Leave blank any fields which do not have corresponding data. If your map has more than 9 systems, click "More Systems" below the table to add rows.</p>
+    <p>To input your map via freeform entry, follow the syntax guide below.</p>
+    <p>Once you have finished entering your map, click "Submit Table" or "Submit Freeform" as appropriate to process the input. If successful, the importable markup will be displayed at the bottom of the page and automatically copied to your clipboard. If unsuccessful, an error dialog will appear detailing any known problems the tool encountered. Either way, your input will be duplicated between the table and the freeform field for clarity and consistency.</p>
+    <h4>Syntax</h4>
+    <p>All pieces, whether ships or stars, are simply represented with standard two-character shorthand: "g1", "r3", &c. You may use capitals and/or separate collocated pieces with spaces at your discretion: "g1 r2 y3" means the same thing as "G1R2Y3". A piece's state is interpreted based on its location within its input row, reflecting standard practice for laying out systems: enemy ships are on the left, stars are in the middle, and your ships are on the right. This makes it easy and natural to transcribe a system by "reading" it from left to right. In the table, the necessary distinction is accomplished with columns. The freeform field uses commas instead.</p>
+    <p>To properly format freeform input, match the table's column layout <em>exactly</em> by separating unlike data with commas, and separating systems with semicolons and/or linebreaks. So, for example, a typical map after initial setup might look like "NorthHomeworld, g3, r1b2, ; SouthHomeworld, , y2b3, g3", with or without the spaces in between fields. No matter what, each system must have exactly three commas separating it into exactly four data fields, even if some of those fields are blank. More examples can be reviewed in-context within the freeform entry field itself whenever it is empty.</p>
+    <h4>Homeworld Assignment</h4>
+    <p>By default, the tool assumes that the first system entered is the north (enemy) homeworld, and that the last system entered is the south (your) homeworld. This makes it parse accurately when transcribing maps from top to bottom. However, you can also assign homeworlds manually if you prefer. If * or [n] appear anywhere in a system's name, the tool will treat that system as the north homeworld; similarly, ** or [s] in a system's name will flag that system as the south homeworld.</p>
+    <h2>Advanced Documentation</h2>
+    <p>Coming soon!</p>
+    <h2>Beta Status</h2>
+    <p>This project is still under construction, so expect minor quirks and bugs!</p>
+    <h4>Known Issues</h4>
+    <ul>
+        <li>The site does not look good on mobile.</li>
+        <li>Clicking either of the "Submit" buttons or the dedicated "Copy to clipboard" button while the text of any of these buttons is displaying result text (&lt;5 seconds between clicks) causes graphical glitches.</li>
+        <li>Single-system maps aren't handled especially well, for a variety of reasons. It's probably easier to just build these manually in the sandbox itself.</li>
+        <li>Some impossible maps aren't yet identified as errors.</li>
+        <li>Basic documentation could be clearer and more concise; advanced documentation needs to be written.</li>
+    </ul>
+    <h4>Misc.</h4>
+    <p>The tool <em>should</em> work repeatedly, but if it begins to behave strangely, try reloading the page: the odd variable has been known to get stuck every now and then. If you encounter any persistent bugs, desire more thorough documentation, or feel like cleaning up some spaghetti code, check out this project's <a href='https://github.com/delendasunt/blueship'>GitHub repository</a>, or message @forkofnature on the <a href='https://discord.gg/tqYPfWVkSk'>Homeworlds Discord server</a>.</p>
+    <p>Enjoy!</p>
 </div><br>
 
+<div id='inputArea'>
+    <table spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off" contenteditable="false">
+        <tr>
+            <th class='nameColumn'>System Name</th>
+            <th>Enemy Ships</th>
+            <th>Star(s)</th>
+            <th>Ally Ships</th>
+        </tr>
+        <tr>
+            <td class='nameColumn'><input type='text' id='s1n'></td>
+            <td><input type='text' id='s1e'></td>
+            <td><input type='text' id='s1s'></td>
+            <td><input type='text' id='s1a'></td>
+        </tr>
+        <tr>
+            <td class='nameColumn'><input type='text' id='s2n'></td>
+            <td><input type='text' id='s2e'></td>
+            <td><input type='text' id='s2s'></td>
+            <td><input type='text' id='s2a'></td>
+        </tr>
+        <tr>
+            <td class='nameColumn'><input type='text' id='s3n'></td>
+            <td><input type='text' id='s3e'></td>
+            <td><input type='text' id='s3s'></td>
+            <td><input type='text' id='s3a'></td>
+        </tr>
+        <tr>
+            <td class='nameColumn'><input type='text' id='s4n'></td>
+            <td><input type='text' id='s4e'></td>
+            <td><input type='text' id='s4s'></td>
+            <td><input type='text' id='s4a'></td>
+        </tr>
+        <tr>
+            <td class='nameColumn'><input type='text' id='s5n'></td>
+            <td><input type='text' id='s5e'></td>
+            <td><input type='text' id='s5s'></td>
+            <td><input type='text' id='s5a'></td>
+        </tr>
+        <tr>
+            <td class='nameColumn'><input type='text' id='s6n'></td>
+            <td><input type='text' id='s6e'></td>
+            <td><input type='text' id='s6s'></td>
+            <td><input type='text' id='s6a'></td>
+        </tr>
+        <tr>
+            <td class='nameColumn'><input type='text' id='s7n'></td>
+            <td><input type='text' id='s7e'></td>
+            <td><input type='text' id='s7s'></td>
+            <td><input type='text' id='s7a'></td>
+        </tr>
+        <tr>
+            <td class='nameColumn'><input type='text' id='s8n'></td>
+            <td><input type='text' id='s8e'></td>
+            <td><input type='text' id='s8s'></td>
+            <td><input type='text' id='s8a'></td>
+        </tr>
+        <tr>
+            <td class='nameColumn'><input type='text' id='s9n'></td>
+            <td><input type='text' id='s9e'></td>
+            <td><input type='text' id='s9s'></td>
+            <td><input type='text' id='s9a'></td>
+        </tr>
+        <tr class='hidden'>
+            <td class='nameColumn'><input type='text' id='s10n'></td>
+            <td><input type='text' id='s10e'></td>
+            <td><input type='text' id='s10s'></td>
+            <td><input type='text' id='s10a'></td>
+        </tr>
+        <tr class='hidden'>
+            <td class='nameColumn'><input type='text' id='s11n'></td>
+            <td><input type='text' id='s11e'></td>
+            <td><input type='text' id='s11s'></td>
+            <td><input type='text' id='s11a'></td>
+        </tr>
+        <tr class='hidden'>
+            <td class='nameColumn'><input type='text' id='s12n'></td>
+            <td><input type='text' id='s12e'></td>
+            <td><input type='text' id='s12s'></td>
+            <td><input type='text' id='s12a'></td>
+        </tr>
+        <tr class='hidden'>
+            <td class='nameColumn'><input type='text' id='s13n'></td>
+            <td><input type='text' id='s13e'></td>
+            <td><input type='text' id='s13s'></td>
+            <td><input type='text' id='s13a'></td>
+        </tr>
+        <tr class='hidden'>
+            <td class='nameColumn'><input type='text' id='s14n'></td>
+            <td><input type='text' id='s14e'></td>
+            <td><input type='text' id='s14s'></td>
+            <td><input type='text' id='s14a'></td>
+        </tr>
+        <tr class='hidden'>
+            <td class='nameColumn'><input type='text' id='s15n'></td>
+            <td><input type='text' id='s15e'></td>
+            <td><input type='text' id='s15s'></td>
+            <td><input type='text' id='s15a'></td>
+        </tr>
+        <tr class='hidden'>
+            <td class='nameColumn'><input type='text' id='s16n'></td>
+            <td><input type='text' id='s16e'></td>
+            <td><input type='text' id='s16s'></td>
+            <td><input type='text' id='s16a'></td>
+        </tr>
+        <tr class='hidden'>
+            <td class='nameColumn'><input type='text' id='s17n'></td>
+            <td><input type='text' id='s17e'></td>
+            <td><input type='text' id='s17s'></td>
+            <td><input type='text' id='s17a'></td>
+        </tr>
+        <tr class='hidden'>
+            <td class='nameColumn'><input type='text' id='s18n'></td>
+            <td><input type='text' id='s18e'></td>
+            <td><input type='text' id='s18s'></td>
+            <td><input type='text' id='s18a'></td>
+        </tr>
+    </table>
+
+    <!--More/Fewer Systems should be a single-button toggle-->
+    <button onclick='addRows()' id='addButton'>More Systems</button>
+    <button onclick='removeRows()' id='removeButton'>Fewer Systems</button>
+    <button onclick='clearTable()'>Clear</button>
+    <button onclick='restoreTable()'>Restore</button>
+    <button onclick='processCells()' id='submitCells'><strong>Submit Table</strong></button>
+    <label><input type='checkbox' onclick='toggleNames()' id='nameToggle' style='accent-color:blue' checked>Name Systems?</label>
+    <br><br>
+    <!--Show/Hide Options should be a single-button toggle-->
+    <button onclick='showOptions()' id='showOptions' style='display:block'>Show Advanced Options</button>
+    <button onclick='hideOptions()' id='hideOptions' style='display:none'>Hide Advanced Options</button>
+    <div id='options' style='accent-color:black;display:none'>
+        <br>
+        <table style='border:1px solid black;border-collapse:collapse'>
+            <tr>
+                <th style='width:150px;border:1px solid black;border-collapse:collapse'>Current turn:</th>
+                <th style='width:320px;border:1px solid black;border-collapse:collapse'>Available actions:</th>
+            </tr>
+            <tr>
+                <td style='border:1px solid black;border-collapse:collapse'>
+                    <label><input type='radio' id='turnSouth' name='turn' onclick='forcePlaying()' checked>South</label>
+                    <label><input type='radio' id='turnNorth' name='turn'>North</label>
+                    <br><br>
+                    <label><input type='radio' id='phasePlaying' name='phase' checked>Playing</label>
+                    <label><input type='radio' id='phaseSetup' name='phase' onclick='forceAnyOneNorth()'>Setup</label>
+                </td>
+                <td style='border:1px solid black;border-collapse:collapse'>
+                    <label><input type='radio' id='any' name='actionType' onclick='oneActionLeft()' value='null' checked>Any</label>
+                    <label><input type='radio' id='move' name='actionType' style='accent-color:yellow' onclick='forcePlaying()' value='"y"'>Move</label>
+                    <label><input type='radio' id='build' name='actionType' style='accent-color:green' onclick='forcePlaying()' value='"g"'>Build</label>
+                    <label><input type='radio' id='capture' name='actionType' style='accent-color:red' onclick='forcePlaying()' value='"r"'>Capture</label>
+                    <label><input type='radio' id='trade' name='actionType' style='accent-color:blue' onclick='forcePlaying()' value='"b"'>Trade</label>
+                    <br><br>
+                    <label><input type='radio' id='1action' name='actionsLeft' checked>x1</label>
+                    <label><input type='radio' id='2actions' onclick='forceSac()' name='actionsLeft'>x2</label>
+                    <label><input type='radio' id='3actions' onclick='forceSac()' name='actionsLeft'>x3</label>
+                </td>
+            </tr>
+        </table><br>
+        <label><input type='checkbox' id='navi' checked>Error Checking? (Disabling this will likely cause bugs.)</label>
+    </div><br>
+    <h3>Freeform Entry</h3>
+    <textarea id='longform' rows='9' cols='60' spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off" contenteditable="false" placeholder='System Name, Enemy Ships, Star or Stars, Ally Ships;&#10;&#10;Examples:&#10;&#10;northHW,g3r1b1,y2b2,;&#10;sharedColony,g2,y3,g2;&#10;southHW,,b1r2,g3;'></textarea><br>
+    <button onclick='clearFreeform()'>Clear</button>
+    <button onclick='restoreFreeform()'>Restore</button>
+    <button onclick='processFreeform("submitFreeform")' id='submitFreeform'><strong>Submit Freeform</strong></button>
+</div><br>
+<div id='errorLog'>
+    <h3 id='errorHeading'>Errors/Warnings</h3>
+    <textarea id='errors' rows='9' cols='60' spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off" contenteditable="false"></textarea>
+    <br>
+</div>
 <div id='outputArea'>
-<h2>Output</h2>
-<button id='clippy' onclick='clip()'>Copy to Clipboard</button><br>
-<textarea id='output' rows='47' cols='47' spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off" contenteditable="false">Blank</textarea>
+    <h2>Output</h2>
+    <button id='clippy' onclick='clip()'>Copy to Clipboard</button><br>
+    <textarea id='output' rows='47' cols='47' spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off" contenteditable="false">Blank</textarea>
 </div>
 
 </body>
