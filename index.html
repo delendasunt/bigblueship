@@ -69,6 +69,15 @@
     var northHWText = 'West';
     var whichButton = 'clippy';
 
+    function resetOptions() {
+        document.getElementById('navi').checked = true;
+        document.getElementById('any').checked = true;
+        document.getElementById('1action').checked = true;
+        document.getElementById('turnSouth').checked = true;
+        document.getElementById('phasePlaying').checked = true;
+        document.getElementById('nameToggle').checked = true;
+    }
+
     // Re-initializes variables to allow multiple trials without reloading page
     function init() {
         piece = {b1A:'null', b1B:'null', b1C:'null', b2A:'null', b2B:'null', b2C:'null', b3A:'null', b3B:'null', b3C:'null', g1A:'null', g1B:'null', g1C:'null', g2A:'null', g2B:'null', g2C:'null', g3A:'null', g3B:'null', g3C:'null', r1A:'null', r1B:'null', r1C:'null', r2A:'null', r2B:'null', r2C:'null', r3A:'null', r3B:'null', r3C:'null', y1A:'null', y1B:'null', y1C:'null', y2A:'null', y2B:'null', y2C:'null', y3A:'null', y3B:'null', y3C:'null'};
@@ -427,6 +436,7 @@
             document.getElementById('phasePlaying').checked = true;
         } else if (fullMap.length < 2 && document.getElementById('navi').checked) {
             forceAnyOneNorth();
+            alert('You have submitted a map with only one system, which forces the tool to believe it is North\'s turn during the setup phase. These settings will persist for future maps until manually reverted under "Show Advanced Options", or until the page is reloaded.')
         }
         if (document.getElementById('turnNorth').checked) {
             currentPlayer = '"north"';
@@ -646,7 +656,7 @@
     }
 </script>
 </head>
-<body>
+<body onload="resetOptions()">
 
 <div>
     <h1>HWL Importable Map Converter</h1>
@@ -660,7 +670,7 @@
     <p>There are currently two methods to input a map: table entry and freeform entry. Syntax and functionality are largely identical between the two entry methods; the main difference is in how you interact with them. Table entry is easiest if your input device has a convenient tab key; if it does not, freeform entry may be easier.</p>
     <p>To input your map via table entry, fill out the data indicated by the column headers for each system, one system per row, following the syntax guide below, starting with the enemy homeworld and ending with your homeworld. Leave blank any fields which do not have corresponding data. If your map has more than 9 systems, click "More Systems" below the table to add rows.</p>
     <p>To input your map via freeform entry, follow the syntax guide below.</p>
-    <p>Once you have finished entering your map, click "Submit Table" or "Submit Freeform" as appropriate to process the input. If successful, the importable markup will be displayed at the bottom of the page and automatically copied to your clipboard. If unsuccessful, an error dialog will appear detailing any known problems the tool encountered. Either way, your input will be duplicated between the table and the freeform field for clarity and consistency.</p>
+    <p>Once you have finished entering your map, click "Convert Table" or "Convert Freeform" as appropriate to process the input. If successful, the importable markup will be displayed at the bottom of the page and automatically copied to your clipboard. If unsuccessful, an error dialog will appear detailing any known problems the tool encountered. Either way, your input will be duplicated between the table and the freeform field for clarity and consistency.</p>
     <h4>Syntax</h4>
     <p>All pieces, whether ships or stars, are simply represented with standard two-character shorthand: "g1", "r3", &c. You may use capitals and/or separate collocated pieces with spaces at your discretion: "g1 r2 y3" means the same thing as "G1R2Y3". A piece's state is interpreted based on its location within its input row, reflecting standard practice for laying out systems: enemy ships are on the left, stars are in the middle, and your ships are on the right. This makes it easy and natural to transcribe a system by "reading" it from left to right. In the table, the necessary distinction is accomplished with columns. The freeform field uses commas instead.</p>
     <p>To properly format freeform input, match the table's column layout <em>exactly</em> by separating unlike data with commas, and separating systems with semicolons and/or linebreaks. So, for example, a typical map after initial setup might look like "NorthHomeworld, g3, r1b2, ; SouthHomeworld, , y2b3, g3", with or without the spaces in between fields. No matter what, each system must have exactly three commas separating it into exactly four data fields, even if some of those fields are blank. More examples can be reviewed in-context within the freeform entry field itself whenever it is empty.</p>
@@ -806,7 +816,7 @@
     <button onclick='removeRows()' id='removeButton'>Fewer Systems</button>
     <button onclick='clearTable()'>Clear</button>
     <button onclick='restoreTable()'>Restore</button>
-    <button onclick='processCells()' id='submitCells'><strong>Submit Table</strong></button>
+    <button onclick='processCells()' id='submitCells'><strong>Convert Table</strong></button>
     <label><input type='checkbox' onclick='toggleNames()' id='nameToggle' style='accent-color:blue' checked>Name Systems?</label>
     <br><br>
     <!--Show/Hide Options should be a single-button toggle-->
@@ -846,7 +856,7 @@
     <textarea id='longform' rows='9' cols='60' spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off" contenteditable="false" placeholder='[System Name, Enemy Ships, Star or Stars, Ally Ships;]&#10;&#10;Example:&#10;&#10;northHW,g3r1b1,y2b2,;&#10;sharedColony,g2,y3,g2;&#10;southHW,,b1r2,g3;'></textarea><br>
     <button onclick='clearFreeform()'>Clear</button>
     <button onclick='restoreFreeform()'>Restore</button>
-    <button onclick='processFreeform("submitFreeform")' id='submitFreeform'><strong>Submit Freeform</strong></button>
+    <button onclick='processFreeform("submitFreeform")' id='submitFreeform'><strong>Convert Freeform</strong></button>
 </div><br>
 <div id='errorLog'>
     <h3 id='errorHeading'>Errors/Warnings</h3>
