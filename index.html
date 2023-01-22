@@ -692,19 +692,19 @@
             <th>Ally Ships</th>
         </tr>
         <tr>
-            <td class='nameColumn'><input type='text' id='s1n'></td>
+            <td class='nameColumn'><input type='text' id='s1n' placeholder='North HW First'></td>
             <td><input type='text' id='s1e'></td>
             <td><input type='text' id='s1s'></td>
             <td><input type='text' id='s1a'></td>
         </tr>
         <tr>
-            <td class='nameColumn'><input type='text' id='s2n'></td>
+            <td class='nameColumn'><input type='text' id='s2n' placeholder='Colonies (1/Row)'></td>
             <td><input type='text' id='s2e'></td>
             <td><input type='text' id='s2s'></td>
             <td><input type='text' id='s2a'></td>
         </tr>
         <tr>
-            <td class='nameColumn'><input type='text' id='s3n'></td>
+            <td class='nameColumn'><input type='text' id='s3n' placeholder='South HW Last'></td>
             <td><input type='text' id='s3e'></td>
             <td><input type='text' id='s3s'></td>
             <td><input type='text' id='s3a'></td>
@@ -843,7 +843,7 @@
         <label><input type='checkbox' id='navi' checked>Error Checking? (Disabling this will likely cause bugs.)</label>
     </div><br>
     <h3>Freeform Entry</h3>
-    <textarea id='longform' rows='9' cols='60' spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off" contenteditable="false" placeholder='System Name, Enemy Ships, Star or Stars, Ally Ships;&#10;&#10;Examples:&#10;&#10;northHW,g3r1b1,y2b2,;&#10;sharedColony,g2,y3,g2;&#10;southHW,,b1r2,g3;'></textarea><br>
+    <textarea id='longform' rows='9' cols='60' spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off" contenteditable="false" placeholder='[System Name, Enemy Ships, Star or Stars, Ally Ships;]&#10;&#10;Example:&#10;&#10;northHW,g3r1b1,y2b2,;&#10;sharedColony,g2,y3,g2;&#10;southHW,,b1r2,g3;'></textarea><br>
     <button onclick='clearFreeform()'>Clear</button>
     <button onclick='restoreFreeform()'>Restore</button>
     <button onclick='processFreeform("submitFreeform")' id='submitFreeform'><strong>Submit Freeform</strong></button>
